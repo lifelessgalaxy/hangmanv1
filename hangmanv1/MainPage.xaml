@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="hangmanv1.MainPage">
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="12" RowSpacing="10">
+
+        <!-- STATUS -->
+        <VerticalStackLayout Grid.Row="0" Spacing="6" HorizontalOptions="Center">
+            <Label Text="{Binding GameStatus}" FontAttributes="Bold" FontSize="18" HorizontalOptions="Center" />
+            <Label Text="{Binding Message}" FontSize="14" HorizontalOptions="Center" />
+        </VerticalStackLayout>
+
+        <!-- HANGMAN IMAGE + WORD INFO -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Image Grid.Row="0" HeightRequest="240" HorizontalOptions="Center" Source="{Binding CurrentImage}" Aspect="AspectFit" />
+
+            <VerticalStackLayout Grid.Row="1" Spacing="4" HorizontalOptions="Center">
+                <Label Text="{Binding Spotlight}" FontSize="36" HorizontalOptions="Center" />
+                <Label Text="{Binding LettersNeededText}" FontSize="16" TextColor="Gray" HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- LETTER BUTTONS -->
+        <ScrollView Grid.Row="2" HeightRequest="210">
+            <FlexLayout x:Name="LettersContainer"
+                    BindableLayout.ItemsSource="{Binding Letters}"
+                    Wrap="Wrap"
+                    JustifyContent="Center"
+                    AlignItems="Center"
+                    Padding="6"
+                    Direction="Row"
+                    AlignContent="Start">
+
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+
+                        <ImageButton
+                            Source="{Binding ImagePath}"
+                            HeightRequest="65"
+                            WidthRequest="65"
+                            Clicked="LetterImageButton_Clicked"
+                            CommandParameter="{Binding Key}"
+                            IsEnabled="{Binding IsEnabled}"
+                            Margin="4" />
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+        </ScrollView>
+
+
+
+        <!-- RESET BUTTON -->
+        <Button Text="Reset"
+            WidthRequest="110"
+            HeightRequest="40"
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Margin="0,6,0,0"
+            Clicked="Reset_Clicked"
+            Grid.Row="2" />
+
+    </Grid>
+
+</ContentPage>
