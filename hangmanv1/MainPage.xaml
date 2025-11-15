@@ -5,58 +5,77 @@
 
     <Grid RowDefinitions="Auto,*,Auto" Padding="12" RowSpacing="10">
 
-        <!-- STATUS -->
+        <!-- Header -->
         <VerticalStackLayout Grid.Row="0" Spacing="6" HorizontalOptions="Center">
-            <Label Text="{Binding GameStatus}" FontAttributes="Bold" FontSize="18" HorizontalOptions="Center" />
-            <Label Text="{Binding Message}" FontSize="14" HorizontalOptions="Center" />
+            <Label
+                Text="{Binding GameStatus}"
+                FontAttributes="Bold"
+                FontSize="18"
+                HorizontalOptions="Center" />
+
+            <Label
+                Text="{Binding Message}"
+                FontSize="14"
+                HorizontalOptions="Center" />
         </VerticalStackLayout>
 
-        <!-- HANGMAN IMAGE + WORD INFO -->
+        <!-- Main: image + spotlight -->
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Image Grid.Row="0" HeightRequest="240" HorizontalOptions="Center" Source="{Binding CurrentImage}" Aspect="AspectFit" />
 
-            <VerticalStackLayout Grid.Row="1" Spacing="4" HorizontalOptions="Center">
-                <Label Text="{Binding Spotlight}" FontSize="36" HorizontalOptions="Center" />
-                <Label Text="{Binding LettersNeededText}" FontSize="16" TextColor="Gray" HorizontalOptions="Center" />
-            </VerticalStackLayout>
+            <!-- Hangman image (frames + animated gif on lose) -->
+            <Image Source="{Binding CurrentImage}" 
+                   Aspect="AspectFit" 
+                   HeightRequest="300" 
+                   WidthRequest="300"/>
+
+            <!-- Spotlight (word with underscores) -->
+            <Label
+                Grid.Row="1"
+                Text="{Binding Spotlight}"
+                FontSize="36"
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Margin="0,12,0,0" />
         </Grid>
 
-        <!-- LETTER BUTTONS -->
+        <!-- Letters area: image buttons produced from Letters collection -->
         <ScrollView Grid.Row="2" HeightRequest="210">
-            <FlexLayout x:Name="LettersContainer"
-                    BindableLayout.ItemsSource="{Binding Letters}"
-                    Wrap="Wrap"
-                    JustifyContent="Center"
-                    AlignItems="Center"
-                    Padding="6"
-                    Direction="Row"
-                    AlignContent="Start">
+            <FlexLayout
+                x:Name="LettersContainer"
+                BindableLayout.ItemsSource="{Binding Letters}"
+                Wrap="Wrap"
+                JustifyContent="SpaceEvenly"
+                AlignItems="Center"
+                Padding="6"
+                Direction="Row">
 
                 <BindableLayout.ItemTemplate>
                     <DataTemplate>
+                        <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                            <ImageButton
+                                Source="{Binding ImagePath}"
+                                HeightRequest="68"
+                                WidthRequest="68"
+                                BackgroundColor="Transparent"
+                                Clicked="LetterImageButton_Clicked"
+                                CommandParameter="{Binding Key}"
+                                IsEnabled="{Binding IsEnabled}" />
 
-                        <ImageButton
-                            Source="{Binding ImagePath}"
-                            HeightRequest="65"
-                            WidthRequest="65"
-                            Clicked="LetterImageButton_Clicked"
-                            CommandParameter="{Binding Key}"
-                            IsEnabled="{Binding IsEnabled}"
-                            Margin="4" />
+                        </VerticalStackLayout>
                     </DataTemplate>
                 </BindableLayout.ItemTemplate>
+
             </FlexLayout>
         </ScrollView>
 
-
-
-        <!-- RESET BUTTON -->
-        <Button Text="Reset"
+        <!-- Reset button overlay bottom-right -->
+        <Button
+            Text="Reset"
             WidthRequest="110"
             HeightRequest="40"
             HorizontalOptions="End"

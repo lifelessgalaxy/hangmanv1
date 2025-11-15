@@ -12,35 +12,20 @@ namespace hangmanv1
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public string Key { get; set; }
+        public string Key { get; set; } = string.Empty;         
+        public string ImagePath { get; set; } = string.Empty;   
 
-        
-        private string imagePath;
-        public string ImagePath
-        {
-            get => imagePath;
-            set
-            {
-                if (imagePath != value)
-                {
-                    imagePath = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ImagePath)));
-                }
-            }
-        }
-
-        private bool isEnabled;
+        private bool isEnabled = true;
         public bool IsEnabled
         {
             get => isEnabled;
-            set
-            {
-                if (isEnabled != value)
-                {
-                    isEnabled = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsEnabled)));
-                }
-            }
+            set { isEnabled = value; OnPropertyChanged(); }
         }
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+            
     }
 }

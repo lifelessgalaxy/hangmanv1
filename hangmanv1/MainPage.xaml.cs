@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace hangmanv1
@@ -7,79 +8,72 @@ namespace hangmanv1
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
+        private const int MaxWrong = 6;
+
         private string gameStatus;
         public string GameStatus
         {
             get => gameStatus;
-            set
-            {
-                gameStatus = value;
-                OnPropertyChanged();
-            }
+            set { gameStatus = value; OnPropertyChanged(); }
         }
 
         private string message;
         public string Message
         {
             get => message;
-            set
-            {
-                message = value;
-                OnPropertyChanged();
-            }
+            set { message = value; OnPropertyChanged(); }
         }
 
         private string spotlight;
         public string Spotlight
         {
             get => spotlight;
-            set
-            {
-                spotlight = value;
-                OnPropertyChanged();
-            }
+            set { spotlight = value; OnPropertyChanged(); }
         }
 
         private string currentImage;
         public string CurrentImage
         {
             get => currentImage;
+            set { currentImage = value; OnPropertyChanged(); }
+        }
+
+        private int lettersNeeded;
+        public int LettersNeeded
+        {
+            get => lettersNeeded;
             set
             {
-                currentImage = value;
+                lettersNeeded = value;
+                LettersNeededText = $"Letters needed: {lettersNeeded}";
                 OnPropertyChanged();
             }
         }
 
-        private string lettersNeededText;
+        private string lettersNeededText = "";
         public string LettersNeededText
         {
             get => lettersNeededText;
-            set
-            {
-                lettersNeededText = value;
-                OnPropertyChanged();
-            }
+            set { lettersNeededText = value; OnPropertyChanged(); }
         }
 
-        private string answer;
-        private List<char> guessed;
-        private int mistakes;
-        private int maxWrong = 6;
+        private string answer = string.Empty;
+        private readonly HashSet<char> guessed = new();
+        private int mistakes = 0;
 
-        public List<LetterModel> Letters { get; set; }
+        public ObservableCollection<LetterModel> Letters { get; } = new();
 
         public MainPage()
         {
             InitializeComponent();
             BindingContext = this;
-            InitializeLetters();
+            PopulateLettersUsingImageFiles();
             StartGame();
         }
 
-        private void InitializeLetters()
+        void PopulateLettersUsingImageFiles()
         {
-            Letters = new List<LetterModel>();
+            Letters.Clear();
             for (char c = 'a'; c <= 'z'; c++)
             {
                 Letters.Add(new LetterModel
@@ -91,97 +85,104 @@ namespace hangmanv1
             }
         }
 
-        private void StartGame()
+        void StartGame()
         {
-            var wordList = new List<(string word, string category)>
-        {
-            ("people", "General"),
-            ("sunset", "Nature"),
-            ("banana", "Fruit"),
-            ("monkey", "Animal"),
-            ("bridge", "Structure"),
-            ("dragon", "Mythical")
-        };
+            string[] words = { "people", "sunset", "banana", "monkey", "bridge", "dragon" };
+            var rnd = new Random();
+            answer = words[rnd.Next(words.Length)].ToLowerInvariant();
 
-            var rand = new Random();
-            var selection = wordList[rand.Next(wordList.Count)];
-            answer = selection.word.ToLower();
-
-            guessed = new List<char>();
+            guessed.Clear();
             mistakes = 0;
 
-            CurrentImage = $"img{mistakes}.png";
+            lettersNeededText = $"Letters needed: {answer.Length}";
+            OnPropertyChanged(nameof(LettersNeededText));
+
+            CurrentImage = $"img{mistakes}.jgp";
             Spotlight = CreateSpotlight();
-            LettersNeededText = $"Letters remaining: {answer.Length}";
-            GameStatus = $"Category: {selection.category}";
-            Message = "";
+            GameStatus = "Guess the word!";
+            Message = "Tap a letter image to guess.";
 
-            foreach (var letter in Letters)
-            {
-                letter.IsEnabled = true;
-                letter.ImagePath = $"{letter.Key}.png";
-            }
+            EnableAllLetters();
         }
 
-        private string CreateSpotlight()
+        string CreateSpotlight()
         {
-            var display = string.Join(" ", answer.Select(c => guessed.Contains(c) ? c : '_'));
-            LettersNeededText = $"Letters remaining: {display.Count(c => c == '_')}";
-            return display;
+            return string.Join(" ", answer.Select(ch => guessed.Contains(ch) ? char.ToUpper(ch).ToString() : "_"));
         }
 
-        private void LetterImageButton_Clicked(object sender, EventArgs e)
+        void LetterImageButton_Clicked(object sender, EventArgs e)
         {
-            var button = sender as ImageButton;
-            var letterModel = button.BindingContext as LetterModel;
+            if (sender is not ImageButton btn) return;
+            if (btn.CommandParameter is null) return;
 
-            if (!letterModel.IsEnabled) return;
-            letterModel.IsEnabled = false;
-            string letter = letterModel.Key;
+            var key = btn.CommandParameter.ToString();
+            if (string.IsNullOrEmpty(key)) return;
 
-            if (answer.Contains(letter))
+            char letter = char.ToLowerInvariant(key[0]);
+
+            var model = Letters.FirstOrDefault(l => l.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+            if (model != null)
+                model.IsEnabled = false;
+
+            if (guessed.Contains(letter)) return;
+
+            if (!answer.Contains(letter))
             {
-                guessed.Add(letter[0]);
-                Spotlight = CreateSpotlight();
+                mistakes++;
 
-                if (!Spotlight.Contains("_"))
+                if (mistakes >= MaxWrong)
                 {
-                    Message = $"You won! The word was '{answer}'";
+                    CurrentImage = "death.gif";
+                    Message = $"You lost! The word was: {answer.ToUpper()}";
+                    GameStatus = "Game over";
                     DisableAllLetters();
+                    return;
+                }
+                else
+                {
+                    CurrentImage = $"img{mistakes}.jpg";
+                    Message = $"Wrong! {MaxWrong - mistakes} tries left.";
                 }
             }
             else
             {
-                letterModel.ImagePath = "letter_wrong.png";
-                mistakes++;
+                guessed.Add(letter);
+                lettersNeededText = $"Remaining letters: {answer.Count(c => !guessed.Contains(c))}";
+                OnPropertyChanged(nameof(LettersNeededText));
+                Spotlight = CreateSpotlight();
 
-                if (mistakes >= maxWrong)
+                if (!Spotlight.Contains("_"))
                 {
-                    CurrentImage = "lose_animation.gif";
-                    Message = $"You lost! The word was '{answer}'";
+                    Message = "You won! Nice job.";
+                    GameStatus = "Victory!";
                     DisableAllLetters();
+                    return;
                 }
                 else
                 {
-                    CurrentImage = $"img{mistakes}.png";
+                    Message = "Good guess!";
                 }
             }
         }
 
-        private void DisableAllLetters()
+        void DisableAllLetters()
         {
-            foreach (var letter in Letters)
-                letter.IsEnabled = false;
+            foreach (var lm in Letters)
+                lm.IsEnabled = false;
         }
 
-        private void Reset_Clicked(object sender, EventArgs e)
+        void EnableAllLetters()
+        {
+            foreach (var lm in Letters)
+                lm.IsEnabled = true;
+        }
+
+        void Reset_Clicked(object sender, EventArgs e)
         {
             StartGame();
         }
 
-        private void OnPropertyChanged([CallerMemberName] string name = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }
