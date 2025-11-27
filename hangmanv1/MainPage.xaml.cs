@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 
 namespace hangmanv1
 {
@@ -10,6 +11,7 @@ namespace hangmanv1
 
         private const int MaxWrong = 6;
 
+        #region Properties
         private string gameStatus;
         public string GameStatus
         {
@@ -38,18 +40,6 @@ namespace hangmanv1
             set { currentImage = value; OnPropertyChanged(); }
         }
 
-        private int lettersNeeded;
-        public int LettersNeeded
-        {
-            get => lettersNeeded;
-            set
-            {
-                lettersNeeded = value;
-                LettersNeededText = $"Letters needed: {lettersNeeded}";
-                OnPropertyChanged();
-            }
-        }
-
         private string lettersNeededText = "";
         public string LettersNeededText
         {
@@ -57,21 +47,60 @@ namespace hangmanv1
             set { lettersNeededText = value; OnPropertyChanged(); }
         }
 
+        private string selectedCategory;
+        public string SelectedCategory
+        {
+            get => selectedCategory;
+            set
+            {
+                selectedCategory = value;
+                OnPropertyChanged();
+                if (!string.IsNullOrEmpty(value))
+                    StartGame();
+            }
+        }
+
+        public ObservableCollection<string> Categories { get; } = new();
+        public ObservableCollection<LetterModel> Letters { get; } = new();
+        #endregion
+
         private string answer = string.Empty;
         private readonly HashSet<char> guessed = new();
         private int mistakes = 0;
 
-        public ObservableCollection<LetterModel> Letters { get; } = new();
+        // Categories with words
+        private readonly Dictionary<string, string[]> categoryWords = new()
+        {
+            { "Animals", new[] { "elephant", "giraffe", "dolphin", "kangaroo", "penguin", "octopus", "raccoon", "squirrel", "hamster", "leopard" } },
+            { "Countries", new[] { "australia", "brazil", "canada", "denmark", "egypt", "finland", "germany", "hungary", "iceland", "japan" } },
+            { "Fruits", new[] { "apple", "banana", "cherry", "durian", "elderberry", "fig", "grape", "honeydew", "imbe", "jackfruit" } },
+            { "Sports", new[] { "baseball", "cricket", "football", "golf", "hockey", "judo", "karate", "rugby", "soccer", "tennis" } },
+            { "Technology", new[] { "computer", "keyboard", "monitor", "printer", "scanner", "laptop", "tablet", "router", "server", "display" } }
+        };
 
         public MainPage()
         {
             InitializeComponent();
             BindingContext = this;
-            PopulateLettersUsingImageFiles();
-            StartGame();
+
+            PopulateCategories();
+            PopulateLetters();
+
+            // Start with first category selected
+            if (Categories.Count > 0)
+                SelectedCategory = Categories[0];
         }
 
-        void PopulateLettersUsingImageFiles()
+        void PopulateCategories()
+        {
+            Categories.Clear();
+            foreach (var category in categoryWords.Keys)
+            {
+                Categories.Add(category);
+            }
+        }
+
+        void PopulateLetters()
         {
             Letters.Clear();
             for (char c = 'a'; c <= 'z'; c++)
@@ -87,7 +116,10 @@ namespace hangmanv1
 
         void StartGame()
         {
-            string[] words = { "people", "sunset", "banana", "monkey", "bridge", "dragon" };
+            if (string.IsNullOrEmpty(SelectedCategory) || !categoryWords.ContainsKey(SelectedCategory))
+                return;
+
+            var words = categoryWords[SelectedCategory];
             var rnd = new Random();
             answer = words[rnd.Next(words.Length)].ToLowerInvariant();
 
@@ -95,11 +127,9 @@ namespace hangmanv1
             mistakes = 0;
 
             lettersNeededText = $"Letters needed: {answer.Length}";
-            OnPropertyChanged(nameof(LettersNeededText));
-
-            CurrentImage = $"img{mistakes}.jgp";
+            CurrentImage = $"img0.jpg";
             Spotlight = CreateSpotlight();
-            GameStatus = "Guess the word!";
+            GameStatus = $"Category: {SelectedCategory} - Guess the word!";
             Message = "Tap a letter image to guess.";
 
             EnableAllLetters();
@@ -107,7 +137,8 @@ namespace hangmanv1
 
         string CreateSpotlight()
         {
-            return string.Join(" ", answer.Select(ch => guessed.Contains(ch) ? char.ToUpper(ch).ToString() : "_"));
+            return string.Join(" ", answer.Select(ch =>
+                guessed.Contains(ch) ? char.ToUpper(ch).ToString() : "_"));
         }
 
         void LetterImageButton_Clicked(object sender, EventArgs e)
@@ -133,7 +164,8 @@ namespace hangmanv1
                 if (mistakes >= MaxWrong)
                 {
                     CurrentImage = "death.gif";
-                    Message = $"You lost! The word was: {answer.ToUpper()}";
+                    Message = $"           You lost!          " + "\n" +
+                        $"The word was: {answer.ToUpper()}";
                     GameStatus = "Game over";
                     DisableAllLetters();
                     return;
@@ -148,7 +180,6 @@ namespace hangmanv1
             {
                 guessed.Add(letter);
                 lettersNeededText = $"Remaining letters: {answer.Count(c => !guessed.Contains(c))}";
-                OnPropertyChanged(nameof(LettersNeededText));
                 Spotlight = CreateSpotlight();
 
                 if (!Spotlight.Contains("_"))
@@ -185,6 +216,6 @@ namespace hangmanv1
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        } 
+        }
     }
 }

@@ -3,24 +3,40 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="hangmanv1.MainPage">
 
-    <Grid RowDefinitions="Auto,*,Auto" Padding="12" RowSpacing="10">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="12" RowSpacing="10">
+
+        <!-- Category Selection -->
+        <HorizontalStackLayout Grid.Row="0" Spacing="10" HorizontalOptions="Center">
+            <Label Text="Category:" VerticalOptions="Center" FontSize="16"/>
+            <Picker
+                Title="Select Category"
+                ItemsSource="{Binding Categories}"
+                SelectedItem="{Binding SelectedCategory}"
+                WidthRequest="200"
+                HeightRequest="40" />
+        </HorizontalStackLayout>
 
         <!-- Header -->
-        <VerticalStackLayout Grid.Row="0" Spacing="6" HorizontalOptions="Center">
+        <VerticalStackLayout Grid.Row="1" Spacing="6" HorizontalOptions="Center">
             <Label
                 Text="{Binding GameStatus}"
                 FontAttributes="Bold"
-                FontSize="18"
+                FontSize="20"
                 HorizontalOptions="Center" />
 
             <Label
                 Text="{Binding Message}"
+                FontSize="17"
+                HorizontalOptions="Center" />
+
+            <Label
+                Text="{Binding LettersNeededText}"
                 FontSize="14"
                 HorizontalOptions="Center" />
         </VerticalStackLayout>
 
         <!-- Main: image + spotlight -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -44,7 +60,7 @@
         </Grid>
 
         <!-- Letters area: image buttons produced from Letters collection -->
-        <ScrollView Grid.Row="2" HeightRequest="210">
+        <ScrollView Grid.Row="3" HeightRequest="210">
             <FlexLayout
                 x:Name="LettersContainer"
                 BindableLayout.ItemsSource="{Binding Letters}"
@@ -82,7 +98,7 @@
             VerticalOptions="End"
             Margin="0,6,0,0"
             Clicked="Reset_Clicked"
-            Grid.Row="2" />
+            Grid.Row="3" />
 
     </Grid>
 
